@@ -6,7 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-import com.magic.spring.statusbarcolor.StatusUtils;
+import com.magic.spring.lightmode.StatusUtils;
 
 public class MainActivity extends AppCompatActivity {
 

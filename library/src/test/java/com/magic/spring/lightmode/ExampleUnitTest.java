@@ -1,4 +1,4 @@
-package com.magic.spring.statusbarcolor;
+package com.magic.spring.lightmode;
 
 import org.junit.Test;
 
