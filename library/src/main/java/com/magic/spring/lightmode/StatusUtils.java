@@ -37,7 +37,7 @@ public class StatusUtils {
 			}
 
 			if (TYPE == 0) {
-				StatusBar.compat(activity, color);
+				StatusBar.compat(activity);
 			} else {
 				StatusBar.compat(activity, color, 0);
 			}
@@ -51,9 +51,10 @@ public class StatusUtils {
 
 	/**
 	 * 透明效果
+	 *
 	 * @param activity
 	 */
-	public void compat(Activity activity){
+	public void compat(Activity activity) {
 		StatusBar.compat(activity);
 	}
 }

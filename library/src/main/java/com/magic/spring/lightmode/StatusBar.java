@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
  * Created by magic on 2017/11/16.
  */
 class StatusBar {
-	public static final int DEFAULT_STATUS_BAR_ALPHA = 32;
+	public static final int DEFAULT_STATUS_BAR_ALPHA = 112;
 	public static final int DEFAULT_STATUS_BAR_ALPHA_TRANSPARENT = 0;
 	private static final int FAKE_STATUS_BAR_VIEW_ID = R.id.statusbarutil_fake_status_bar_view;
 	private static final int FAKE_TRANSLUCENT_VIEW_ID = R.id.statusbarutil_translucent_view;
@@ -40,45 +40,22 @@ class StatusBar {
 	}
 
 	public static void compat(Activity activity, @ColorInt int statusColor, @IntRange(from = 0, to = 255) int statusBarAlpha) {
-		/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+		int color = COLOR_DEFAULT;
+		if (statusColor != INVALID_VAL) {//半透明的浅色调太难看，还不如用主题色或者黑色
+			color = statusColor;
+		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 			activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-			activity.getWindow().setStatusBarColor(calculateStatusColor(statusColor, statusBarAlpha));
-		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-			ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
-			View fakeStatusBarView = decorView.findViewById(FAKE_STATUS_BAR_VIEW_ID);
-			if (fakeStatusBarView != null) {
-				if (fakeStatusBarView.getVisibility() == View.GONE) {
-					fakeStatusBarView.setVisibility(View.VISIBLE);
-				}
-				fakeStatusBarView.setBackgroundColor(calculateStatusColor(statusColor, statusBarAlpha));
-			} else {
-				decorView.addView(createStatusBarView(activity, statusColor, statusBarAlpha));
-			}
-			setRootView(activity);
-		}*/
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			if (statusColor != INVALID_VAL) {
-				activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-				activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-				activity.getWindow().setStatusBarColor(calculateStatusColor(statusColor, statusBarAlpha));
-			} else {
-				activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-			}
+			activity.getWindow().setStatusBarColor(calculateStatusColor(color, statusBarAlpha));
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-			compatKITKAT(activity, statusColor, statusBarAlpha);
+			compatKITKAT(activity, color, statusBarAlpha);
 		}
 		setRootView(activity);
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
-	private static void compatKITKAT(Activity activity, @ColorInt int statusColor, @IntRange(from = 0, to = 255) int statusBarAlpha) {
-		int color = COLOR_DEFAULT;
-		if (statusColor != INVALID_VAL) {
-			color = statusColor;
-		}
+	private static void compatKITKAT(Activity activity, @ColorInt int color, @IntRange(from = 0, to = 255) int statusBarAlpha) {
 		activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
 		ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
 		View fakeStatusBarView = decorView.findViewById(FAKE_STATUS_BAR_VIEW_ID);
