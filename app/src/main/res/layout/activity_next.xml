@@ -11,6 +11,7 @@
         android:id="@+id/toolbar_next"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:fitsSystemWindows="true"
         android:background="@color/colorPrimary">
 
         <LinearLayout

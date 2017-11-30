@@ -1,10 +1,13 @@
 package com.magic.spring.lightmode;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.ColorInt;
 import android.support.annotation.IntRange;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,20 +22,28 @@ import java.lang.reflect.Method;
  * Created by magic on 2017/11/16.
  */
 class StatusBar {
-	public static final int DEFAULT_STATUS_BAR_ALPHA = 112;
+	public static final int DEFAULT_STATUS_BAR_ALPHA = 32;
 	public static final int DEFAULT_STATUS_BAR_ALPHA_TRANSPARENT = 0;
 	private static final int FAKE_STATUS_BAR_VIEW_ID = R.id.statusbarutil_fake_status_bar_view;
 	private static final int FAKE_TRANSLUCENT_VIEW_ID = R.id.statusbarutil_translucent_view;
 
-	public static void setColor(Activity activity, @ColorInt int color) {
-		setColor(activity, color, DEFAULT_STATUS_BAR_ALPHA);
+
+	private static final int INVALID_VAL = -100;
+	private static final int COLOR_DEFAULT = Color.parseColor("#20000000");
+
+	public static void compat(Activity activity, @ColorInt int color) {
+		compat(activity, color, DEFAULT_STATUS_BAR_ALPHA);
 	}
 
-	public static void setColor(Activity activity, @ColorInt int color, @IntRange(from = 0, to = 255) int statusBarAlpha) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+	public static void compat(Activity activity) {
+		compat(activity, INVALID_VAL);
+	}
+
+	public static void compat(Activity activity, @ColorInt int statusColor, @IntRange(from = 0, to = 255) int statusBarAlpha) {
+		/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 			activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-			activity.getWindow().setStatusBarColor(calculateStatusColor(color, statusBarAlpha));
+			activity.getWindow().setStatusBarColor(calculateStatusColor(statusColor, statusBarAlpha));
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
 			ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
@@ -41,11 +52,43 @@ class StatusBar {
 				if (fakeStatusBarView.getVisibility() == View.GONE) {
 					fakeStatusBarView.setVisibility(View.VISIBLE);
 				}
-				fakeStatusBarView.setBackgroundColor(calculateStatusColor(color, statusBarAlpha));
+				fakeStatusBarView.setBackgroundColor(calculateStatusColor(statusColor, statusBarAlpha));
 			} else {
-				decorView.addView(createStatusBarView(activity, color, statusBarAlpha));
+				decorView.addView(createStatusBarView(activity, statusColor, statusBarAlpha));
 			}
 			setRootView(activity);
+		}*/
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			if (statusColor != INVALID_VAL) {
+				activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+				activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+				activity.getWindow().setStatusBarColor(calculateStatusColor(statusColor, statusBarAlpha));
+			} else {
+				activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+			}
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			compatKITKAT(activity, statusColor, statusBarAlpha);
+		}
+		setRootView(activity);
+	}
+
+	@RequiresApi(api = Build.VERSION_CODES.KITKAT)
+	private static void compatKITKAT(Activity activity, @ColorInt int statusColor, @IntRange(from = 0, to = 255) int statusBarAlpha) {
+		int color = COLOR_DEFAULT;
+		if (statusColor != INVALID_VAL) {
+			color = statusColor;
+		}
+		activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+		ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+		View fakeStatusBarView = decorView.findViewById(FAKE_STATUS_BAR_VIEW_ID);
+		if (fakeStatusBarView != null) {
+			if (fakeStatusBarView.getVisibility() == View.GONE) {
+				fakeStatusBarView.setVisibility(View.VISIBLE);
+			}
+			fakeStatusBarView.setBackgroundColor(calculateStatusColor(color, statusBarAlpha));
+		} else {
+			decorView.addView(createStatusBarView(activity, color));
 		}
 	}
 
@@ -67,6 +110,10 @@ class StatusBar {
 		statusBarView.setBackgroundColor(calculateStatusColor(color, alpha));
 		statusBarView.setId(FAKE_STATUS_BAR_VIEW_ID);
 		return statusBarView;
+	}
+
+	private static View createStatusBarView(Activity activity, int color) {
+		return createStatusBarView(activity, color, 0);
 	}
 
 
@@ -95,10 +142,86 @@ class StatusBar {
 		if (fakeStatusBarView != null) {
 			fakeStatusBarView.setVisibility(View.GONE);
 		}
-		View fakeTranslucentView = decorView.findViewById(FAKE_TRANSLUCENT_VIEW_ID);
-		if (fakeTranslucentView != null) {
-			fakeTranslucentView.setVisibility(View.GONE);
+	}
+
+
+	/**
+	 * 设置状态栏全透明
+	 *
+	 * @param activity 需要设置的activity
+	 */
+	public static void setTransparent(Activity activity) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+			return;
 		}
+		transparentStatusBar(activity);
+		setRootView(activity);
+	}
+
+	/**
+	 * 使状态栏半透明
+	 * 适用于图片作为背景的界面,此时需要图片填充到状态栏
+	 *
+	 * @param activity       需要设置的activity
+	 * @param statusBarAlpha 状态栏透明度
+	 */
+	public static void setTranslucent(Activity activity, @IntRange(from = 0, to = 255) int statusBarAlpha) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+			return;
+		}
+		setTransparent(activity);
+		addTranslucentView(activity, statusBarAlpha);
+	}
+
+	/**
+	 * 使状态栏透明
+	 */
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private static void transparentStatusBar(Activity activity) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+			activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+			activity.getWindow().setStatusBarColor(Color.TRANSPARENT);
+		} else {
+			activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+		}
+	}
+
+	/**
+	 * 添加半透明矩形条
+	 *
+	 * @param activity       需要设置的 activity
+	 * @param statusBarAlpha 透明值
+	 */
+	private static void addTranslucentView(Activity activity, @IntRange(from = 0, to = 255) int statusBarAlpha) {
+		ViewGroup contentView = (ViewGroup) activity.findViewById(android.R.id.content);
+		View fakeTranslucentView = contentView.findViewById(FAKE_TRANSLUCENT_VIEW_ID);
+		if (fakeTranslucentView != null) {
+			if (fakeTranslucentView.getVisibility() == View.GONE) {
+				fakeTranslucentView.setVisibility(View.VISIBLE);
+			}
+			fakeTranslucentView.setBackgroundColor(Color.argb(statusBarAlpha, 0, 0, 0));
+		} else {
+			contentView.addView(createTranslucentStatusBarView(activity, statusBarAlpha));
+		}
+	}
+
+	/**
+	 * 创建半透明矩形 View
+	 *
+	 * @param alpha 透明值
+	 * @return 半透明 View
+	 */
+	private static View createTranslucentStatusBarView(Activity activity, int alpha) {
+		// 绘制一个和状态栏一样高的矩形
+		View statusBarView = new View(activity);
+		LinearLayout.LayoutParams params =
+				new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getStatusBarHeight(activity));
+		statusBarView.setLayoutParams(params);
+		statusBarView.setBackgroundColor(Color.argb(alpha, 0, 0, 0));
+		statusBarView.setId(FAKE_TRANSLUCENT_VIEW_ID);
+		return statusBarView;
 	}
 
 	/**
@@ -109,8 +232,12 @@ class StatusBar {
 	 */
 	private static int getStatusBarHeight(Context context) {
 		// 获得状态栏高度
+		int result = 0;
 		int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
-		return context.getResources().getDimensionPixelSize(resourceId);
+		if (resourceId > 0) {
+			result = context.getResources().getDimensionPixelSize(resourceId);
+		}
+		return result;
 	}
 
 	/**

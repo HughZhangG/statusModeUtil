@@ -36,16 +36,24 @@ public class StatusUtils {
 				StatusBar.statusBarLightMode(activity, TYPE);
 			}
 
-			if (TYPE == 0){
-				StatusBar.setColor(activity, color);
-			}else {
-				StatusBar.setColor(activity, color, 0);
+			if (TYPE == 0) {
+				StatusBar.compat(activity, color);
+			} else {
+				StatusBar.compat(activity, color, 0);
 			}
 		} else {
-			StatusBar.setColor(activity, color, 0);//深色系  不设置透明度
+			StatusBar.compat(activity, color, 0);//深色系  不设置透明度
 			if (TYPE != 0) {
 				StatusBar.statusBarDarkMode(activity, TYPE);
 			}
 		}
+	}
+
+	/**
+	 * 透明效果
+	 * @param activity
+	 */
+	public void compat(Activity activity){
+		StatusBar.compat(activity);
 	}
 }
